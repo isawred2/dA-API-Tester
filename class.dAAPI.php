@@ -3,55 +3,60 @@
 	
 		// Constructing the basic functions of the class
 		function __construct($client_id, $client_secret) {
+			define('LBR', "\r\n");
+			define('HR', "\r\n========================================================\r\n");
 			$this->os = PHP_OS; // The System OS
 			$this->client_id = $client_id; // Client ID
 			$this->client_secret = $client_secret; // Client Secret
-			echo "\r\nWelcome to the dA API Tester!\r\n";
+			echo HR . LBR . "Welcome to the dA API Tester!" . LBR . HR;
 			$this->menu();
+			
 		}
 		
 		// Creating the menu of options
 		public function menu() {
 			// Listing all the options to choose
-			echo "\r\nPlease choose an option to run below!\r\n\t";
-			echo "1) Grab your oAuth Tokens\r\n\t";
-			echo "2) Grab your dAmntoken\r\n\t";
-			echo "3) Grab your user information\r\n\t";
-			echo "4) Check your Stash space\r\n\t";
-			echo "5) Upload to Stash (Not implemented yet)\r\n\t";
-			echo "6) Show Deviation Info\r\n\r\n";
+			echo LBR . "Please choose an option to run below!" . LBR;
+			echo LBR . "oAuth API" . LBR;
+				echo "\t1) Grab your oAuth Tokens" . LBR;
+				echo "\t2) Grab your dAmntoken" . LBR;
+				echo "\t3) Grab your user information" . LBR;
+				echo "\t4) Check your Stash space" . LBR;
+				echo "\t5) Upload to Stash (Not implemented yet)" . LBR;
+			echo LBR . "oEmbed API" . LBR;
+				echo "\t6) Show Deviation Info" . LBR;
 			// Choosing the option
-			echo "Enter the number of the option:\r\n";
+			echo LBR . "Enter the number of the option:" . LBR;
 			$choice = trim(fgets(STDIN));
-			echo "\r\n";
+			echo HR . LBR;
 			
 			// Checking the option
 			switch($choice) {
 				case 1: // oAuth
 					$this->oauth(1);
-					echo "Tokens grabbed!\r\n";
+					echo "Tokens grabbed!" . LBR . HR;
 					break;
 				case 2: // dAmntoken
 					$this->damntoken();
-					echo "Your dAmntoken is " . $this->damntoken->damntoken . ".\r\n";
+					echo "Your dAmntoken is " . $this->damntoken->damntoken . "." . LBR . HR;
 					break;
 				case 3: // Whoami
 					$this->whoami();
-					echo "You are " . $this->whoami->symbol . $this->whoami->username . ".\r\n";
+					echo "You are " . $this->whoami->symbol . $this->whoami->username . "." . LBR . HR;
 					break;
 				case 4: // Stash Space
 					$this->stash_space();
-					echo "Your currently left stash space is " . $this->stash_space->available_space/1024/1024 . " megabytes.\r\n";
+					echo "Your currently left stash space is " . $this->stash_space->available_space/1024/1024 . " megabytes." . LBR . HR;
 					break;
 				case 5: // Stash Upload
-					echo "Not implemented yet.\r\n\r\n";
+					echo "Not implemented yet.\r\n" . LBR . HR;
 					break;
 				case 6: // oEmbed
 					$this->oEmbed();
-					echo "This deviation is " . $this->oembed->title . " by " . $this->oembed->author_name. ".\r\n";
+					echo "This deviation is " . $this->oembed->title . " by " . $this->oembed->author_name. "." . LBR . HR;
 					break;
 				default: // Default
-					echo "\r\nInvalid option, please try again!\r\n\r\n";
+					echo "Invalid option, please try again!" . LBR . HR;
 					break;
 			}
 			$this->menu(); // Reset to menu after option chosen
@@ -70,7 +75,7 @@
 		// oAuth function, mode sets silent, 0 = silent, 1 = echo
 		public function oauth($mode) { 
 			if(file_exists("oauth.json")){ // Checking if the file_exists
-				echo ($mode == 0) ?: "Grabbing existing oAuth tokens:\r\n"; // Turn off if silent
+				echo ($mode == 0) ?: "Grabbing existing oAuth tokens:" . LBR; // Turn off if silent
 				
 				// Reading config file
 				$config_file = "oauth.json";
@@ -80,7 +85,7 @@
 				$this->oauth_tokens = json_decode(fread($fh, filesize($config_file)));
 				fclose($fh);
 			} else {
-				echo ($mode == 0) ?: "Grabbing the oAuth Tokens from deviantART:\r\n"; // Turn off if silent
+				echo ($mode == 0) ?: "Grabbing the oAuth Tokens from deviantART:" . LBR; // Turn off if silent
 				
 				// Opening browser based on OS
 				switch($this->os) {
@@ -94,13 +99,13 @@
 						exec("browser 'https://www.deviantart.com/oauth2/draft15/authorize?client_id=".$this->client_id."&redirect_uri=http://damnapp.com/apicode.php&response_type=code'");
 						break;
 		 			default: // No browser command found so echo it out
-		 				echo "Could not open your browser to the required URL. Please load the below one!\r\n";
+		 				echo "Could not open your browser to the required URL. Please load the below one!" . LBR;
 		 				echo 'https://www.deviantart.com/oauth2/draft15/authorize?client_id=".$this->client_id."&redirect_uri=http://damnapp.com/apicode.php&response_type=code';
 		 				break;
 		 		}
 		 		
 				// Retreiving the code
-				echo "Enter the code:\r\n";
+				echo "Enter the code:" . LBR;
 				$code = trim(fgets(STDIN)); // STDIN for reading input
 				
 				// Getting the access token.
@@ -154,9 +159,9 @@
 		
 		public function oembed() {	
 			// Grab your whoami info and set it to whoami variable
-			echo "Enter the URL of the deviation:\r\n";
+			echo "Enter the URL of the deviation:" . LBR;
 			$url = trim(fgets(STDIN)); // STDIN for reading input
-			echo "\r\n";
+			echo "" . LBR;
 			$this->oembed = json_decode($this->curler('http://backend.deviantart.com/oembed?url='.$url));
 		}
 
