@@ -75,17 +75,26 @@
 		// oAuth function, mode sets silent, 0 = silent, 1 = echo
 		public function oauth($mode) { 
 			if(file_exists("oauth.json")){ // Checking if the file_exists
-				echo ($mode == 0) ?: "Grabbing existing oAuth tokens:" . LBR; // Turn off if silent
+				echo ($mode == 0) ?: "Grabbing existing oAuth tokens..." . LBR; // Turn off if silent
 				
 				// Reading config file
 				$config_file = "oauth.json";
 				$fh = fopen($config_file, 'r') or die("can't open file");
 				
+				echo ($mode == 0) ?: "Tokens grabbed from file..." . LBR . LBR;
 				// Setting to the oauth_tokens variable
 				$this->oauth_tokens = json_decode(fread($fh, filesize($config_file)));
+				
+				echo ($mode == 0) ?: "Checking if tokens have expired..." . LBR;
+				$placebo = json_decode($this->curler('https://www.deviantart.com/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
+				if($placebo->status != "success") { 
+					echo ($mode == 0) ?: "Tokens expired, grabbing new ones..." . LBR;
+					unlink($config_file);
+					$this->oauth(0);
+				}
 				fclose($fh);
 			} else {
-				echo ($mode == 0) ?: "Grabbing the oAuth Tokens from deviantART:" . LBR; // Turn off if silent
+				echo ($mode == 0) ?: "Grabbing the oAuth Tokens from deviantART..." . LBR; // Turn off if silent
 				
 				// Opening browser based on OS
 				switch($this->os) {
