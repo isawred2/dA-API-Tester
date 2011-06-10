@@ -109,7 +109,7 @@
 						break;
 		 			default: // No browser command found so echo it out
 		 				echo "Could not open your browser to the required URL. Please load the below one!" . LBR;
-		 				echo 'https://www.deviantart.com/oauth2/draft15/authorize?client_id=".$this->client_id."&redirect_uri=http://damnapp.com/apicode.php&response_type=code';
+		 				echo 'https://www.deviantart.com/oauth2/draft15/authorize?client_id='.$this->client_id.'&redirect_uri=http://damnapp.com/apicode.php&response_type=code';
 		 				break;
 		 		}
 		 		
