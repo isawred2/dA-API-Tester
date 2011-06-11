@@ -34,7 +34,6 @@
 			switch($choice) {
 				case 1: // oAuth
 					$this->oauth(1);
-					echo "Tokens grabbed!" . LBR . HR;
 					break;
 				case 2: // dAmntoken
 					$this->damntoken();
@@ -56,10 +55,15 @@
 					echo "This deviation is " . $this->oembed->title . " by " . $this->oembed->author_name. "." . LBR . HR;
 					break;
 				default: // Default
-					echo "Invalid option, please try again!" . LBR . HR;
+					echo $this->error("Invalid option, please try again!") . LBR . HR;
+					
 					break;
 			}
 			$this->menu(); // Reset to menu after option chosen
+		}
+		
+		private function error($text) {
+			echo " \033[1;33m" . $text . "\033[0m";
 		}
 		
 		// Function to reuse the curl code.
@@ -74,25 +78,42 @@
 		
 		// oAuth function, mode sets silent, 0 = silent, 1 = echo
 		public function oauth($mode) { 
-			if(file_exists("oauth.json")){ // Checking if the file_exists
+			if(is_readable("oauth.json")){ // Checking if the file_exists
 				echo ($mode == 0) ?: "Grabbing existing oAuth tokens..." . LBR; // Turn off if silent
 				
 				// Reading config file
 				$config_file = "oauth.json";
-				$fh = fopen($config_file, 'r') or die("can't open file");
+				if(filesize($config_file) != 0) {
+					$fh = fopen($config_file, 'r') or die("can't open file");
 				
-				echo ($mode == 0) ?: "Tokens grabbed from file..." . LBR . LBR;
+					echo ($mode == 0) ?: "Tokens grabbed from file..." . LBR . LBR;
 				// Setting to the oauth_tokens variable
-				$this->oauth_tokens = json_decode(fread($fh, filesize($config_file)));
-				
-				echo ($mode == 0) ?: "Checking if tokens have expired..." . LBR;
-				$placebo = json_decode($this->curler('https://www.deviantart.com/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
-				if($placebo->status != "success") { 
-					echo ($mode == 0) ?: "Tokens expired, grabbing new ones..." . LBR;
-					unlink($config_file);
-					$this->oauth(0);
+					$this->oauth_tokens = json_decode(fread($fh, filesize($config_file)));
+					
+					echo ($mode == 0) ?: "Checking if tokens have expired..." . LBR;
+					$placebo = json_decode($this->curler('https://www.deviantart.com/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
+					if($placebo->status != "success") { 
+						echo ($mode == 0) ?: "Tokens expired, grabbing new ones..." . LBR;
+						if (is_writable($config_file)) {
+							unlink($config_file);
+							$this->oauth(0);
+						} else { 
+							echo ($mode == 0) ?: $this->error("Cannot write to oauth.json, trying to fix...") . LBR;							chmod($config_file, 755);
+							$this->oauth(0);
+						}
+					}
+					fclose($fh);
+				} else {
+					echo ($mode == 0) ?: $this->error("Your token file is empty, grabbing new ones...") . LBR;
+					if (is_writable($config_file)) {
+						unlink($config_file);
+						$this->oauth(0);
+					} else { 
+						echo ($mode == 0) ?: $this->error("Cannot write to oauth.json, trying to fix...") . LBR;							chmod($config_file, 755);
+						$this->oauth(0);
+					}
+					
 				}
-				fclose($fh);
 			} else {
 				echo ($mode == 0) ?: "Grabbing the oAuth Tokens from deviantART..." . LBR; // Turn off if silent
 				
@@ -122,12 +143,18 @@
 				
 				// Set to oauth_tokens variable
 				$this->oauth_tokens = json_decode($tokens);
+				if($this->oauth_tokens->status != "success") {
+					echo ($mode == 0) ?: $this->error("For some reason, your tokens failed") . LBR . HR;
+				} else {
+					// Writing to oauth.json
+					$config_file = "oauth.json";
 				
-				// Writing to oauth.json
-				$config_file = "oauth.json";
-				$fh = fopen($config_file, 'w') or die("can't open file");
-				fwrite($fh, $tokens);
-				fclose($fh);
+					$fh = fopen($config_file, 'w') or die("can't open file");
+					fwrite($fh, $tokens);
+					fclose($fh);
+					echo ($mode == 0) ?: "Tokens grabbed!" . LBR . HR;
+				}
+					
 			}
 		}
 		
