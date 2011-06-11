@@ -94,24 +94,18 @@
 					$placebo = json_decode($this->curler('https://www.deviantart.com/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
 					if($placebo->status != "success") { 
 						echo ($mode == 0) ?: "Tokens expired, grabbing new ones..." . LBR;
-						if (is_writable($config_file)) {
-							unlink($config_file);
-							$this->oauth(0);
-						} else { 
-							echo ($mode == 0) ?: $this->error("Cannot write to oauth.json, trying to fix...") . LBR;							chmod($config_file, 755);
-							$this->oauth(0);
-						}
-					}
-					fclose($fh);
-				} else {
-					echo ($mode == 0) ?: $this->error("Your token file is empty, grabbing new ones...") . LBR;
-					if (is_writable($config_file)) {
+						(!is_writable($config_file)) ?: chmod($config_file, 755);
 						unlink($config_file);
 						$this->oauth(0);
-					} else { 
-						echo ($mode == 0) ?: $this->error("Cannot write to oauth.json, trying to fix...") . LBR;							chmod($config_file, 755);
-						$this->oauth(0);
+					} else {
+						echo ($mode == 0) ?: "Tokens grabbed!" . LBR . HR;
+						fclose($fh);
 					}
+				} else {
+					echo ($mode == 0) ?: $this->error("Your token file is empty, grabbing new ones...") . LBR;
+					(!is_writable($config_file)) ?: chmod($config_file, 755);
+					unlink($config_file);
+					$this->oauth(0);
 					
 				}
 			} else {
@@ -153,8 +147,7 @@
 					fwrite($fh, $tokens);
 					fclose($fh);
 					echo ($mode == 0) ?: "Tokens grabbed!" . LBR . HR;
-				}
-					
+				}			
 			}
 		}
 		
