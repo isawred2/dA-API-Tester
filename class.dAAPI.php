@@ -72,6 +72,9 @@
 			curl_setopt($curl_handle,CURLOPT_URL,$url);
 			curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, 1); // Stop curl echoing the info
 			$buffer = curl_exec($curl_handle);
+			if($buffer == false) {
+				echo $this->error("Curl error: " . curl_error($curl_handle));
+			}
 			curl_close($curl_handle);
 			return $buffer; // Return the buffer of info
 		}
@@ -138,6 +141,7 @@
 				// Set to oauth_tokens variable
 				$this->oauth_tokens = json_decode($tokens);
 				if($this->oauth_tokens->status != "success") {
+					
 					echo ($mode == 0) ?: $this->error("For some reason, your tokens failed") . LBR . HR;
 				} else {
 					// Writing to oauth.json
