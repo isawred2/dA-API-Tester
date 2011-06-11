@@ -67,16 +67,21 @@
 		}
 		
 		// Function to reuse the curl code.
-		private function curler($url) {
-			$curl_handle=curl_init();
-			curl_setopt($curl_handle,CURLOPT_URL,$url);
-			curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, 1); // Stop curl echoing the info
-			$buffer = curl_exec($curl_handle);
-			if($buffer == false) {
-				echo $this->error("Curl error: " . curl_error($curl_handle));
+		private function socket($url) {
+			$fp = fsockopen("ssl://deviantart.com", 443, $errno, $errstr, 30);
+			if (!$fp) {
+			    echo "$errstr ($errno)<br />\n";
+			} else {
+			    $out = "GET ".$url." HTTP/1.1\r\n";
+			    $out .= "Host: www.deviantart.com\r\n";
+			    $out .= "Connection: Close\r\n\r\n";
+			    fwrite($fp, $out);
+			    while (!feof($fp)) {
+			        $buffer = fgets($fp, 512);
+			    }
+			    fclose($fp);
+			    return $buffer;
 			}
-			curl_close($curl_handle);
-			return $buffer; // Return the buffer of info
 		}
 		
 		// oAuth function, mode sets silent, 0 = silent, 1 = echo
@@ -94,7 +99,7 @@
 					$this->oauth_tokens = json_decode(fread($fh, filesize($config_file)));
 					
 					echo ($mode == 0) ?: "Checking if tokens have expired..." . LBR;
-					$placebo = json_decode($this->curler('https://www.deviantart.com/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
+					$placebo = json_decode($this->socket('/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
 					if($placebo->status != "success") { 
 						echo ($mode == 0) ?: "Tokens expired, grabbing new ones..." . LBR;
 						(!is_writable($config_file)) ?: chmod($config_file, 755);
@@ -136,7 +141,7 @@
 				$code = trim(fgets(STDIN)); // STDIN for reading input
 				
 				// Getting the access token.
-				$tokens = $this->curler('https://www.deviantart.com/oauth2/draft15/token?client_id='.$this->client_id.'&redirect_uri=http://damnapp.com//apicode.php&grant_type=authorization_code&client_secret='.$this->client_secret.'&code='.$code);
+				$tokens = $this->socket('/oauth2/draft15/token?client_id='.$this->client_id.'&redirect_uri=http://damnapp.com//apicode.php&grant_type=authorization_code&client_secret='.$this->client_secret.'&code='.$code);
 				
 				// Set to oauth_tokens variable
 				$this->oauth_tokens = json_decode($tokens);
@@ -164,7 +169,7 @@
 			}
 			
 			// Grab the damntoken and set it to damntoken variable
-			$this->damntoken = json_decode($this->curler('https://www.deviantart.com/api/draft15/user/damntoken?access_token='.$this->oauth_tokens->access_token));
+			$this->damntoken = json_decode($this->socket('/api/draft15/user/damntoken?access_token='.$this->oauth_tokens->access_token));
 		}
 		
 		
@@ -176,7 +181,7 @@
 			}
 			
 			// Grab your whoami info and set it to whoami variable
-			$this->whoami = json_decode($this->curler('https://www.deviantart.com/api/draft15/user/whoami?access_token='.$this->oauth_tokens->access_token));
+			$this->whoami = json_decode($this->socket('/api/draft15/user/whoami?access_token='.$this->oauth_tokens->access_token));
 		}
 		
 		// stash_space function
@@ -187,7 +192,7 @@
 			}
 			
 			// Grabbing your stash_space info and set it to stash_space variable
-			$this->stash_space = json_decode($this->curler('https://www.deviantart.com/api/draft15/stash/space?access_token='.$this->oauth_tokens->access_token));
+			$this->stash_space = json_decode($this->socket('/api/draft15/stash/space?access_token='.$this->oauth_tokens->access_token));
 		}
 		
 		public function oembed() {	
@@ -195,7 +200,7 @@
 			echo "Enter the URL of the deviation:" . LBR;
 			$url = trim(fgets(STDIN)); // STDIN for reading input
 			echo "" . LBR;
-			$this->oembed = json_decode($this->curler('http://backend.deviantart.com/oembed?url='.$url));
+			$this->oembed = json_decode($this->socket('http://backend.deviantart.com/oembed?url='.$url));
 		}
 
 	}
