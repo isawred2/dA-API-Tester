@@ -2,15 +2,15 @@
 	class dAAPI {
 	
 		// Constructing the basic functions of the class
-		function __construct($client_id, $client_secret) {
+		function __construct($client_id, $client_secret, $test_mode) {
 			define('LBR', "\r\n");
 			define('HR', "\r\n========================================================\r\n");
 			$this->os = PHP_OS; // The System OS
 			$this->client_id = $client_id; // Client ID
 			$this->client_secret = $client_secret; // Client Secret
+			$this->test_mode = $test_mode;
 			echo HR . LBR . "Welcome to the dA API Tester!" . LBR . HR;
-			$this->menu();
-			
+			if($this->test_mode == 0) $this->menu();
 		}
 		
 		// Creating the menu of options
@@ -59,7 +59,7 @@
 					
 					break;
 			}
-			$this->menu(); // Reset to menu after option chosen
+			if($this->test_mode == 0) $this->menu();// Reset to menu after option chosen
 		}
 		
 		private function error($text) {
@@ -87,37 +87,37 @@
 		// oAuth function, mode sets silent, 0 = silent, 1 = echo
 		public function oauth($mode) { 
 			if(is_readable("oauth.json")){ // Checking if the file_exists
-				echo ($mode == 0) ?: "Grabbing existing oAuth tokens..." . LBR; // Turn off if silent
+				if($mode == 0) echo "Grabbing existing oAuth tokens..." . LBR; // Turn off if silent
 				
 				// Reading config file
 				$config_file = "oauth.json";
 				if(filesize($config_file) != 0) {
 					$fh = fopen($config_file, 'r') or die("can't open file");
 				
-					echo ($mode == 0) ?: "Tokens grabbed from file..." . LBR . LBR;
+					if($mode == 0) echo "Tokens grabbed from file..." . LBR . LBR;
 				// Setting to the oauth_tokens variable
 					$this->oauth_tokens = json_decode(fread($fh, filesize($config_file)));
 					
-					echo ($mode == 0) ?: "Checking if tokens have expired..." . LBR;
+					if($mode == 0) echo "Checking if tokens have expired..." . LBR;
 					$placebo = json_decode($this->socket('/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
 					if($placebo->status != "success") { 
-						echo ($mode == 0) ?: "Tokens expired, grabbing new ones..." . LBR;
+						if($mode == 0) echo "Tokens expired, grabbing new ones..." . LBR;
 						(!is_writable($config_file)) ?: chmod($config_file, 755);
 						unlink($config_file);
 						$this->oauth(0);
 					} else {
-						echo ($mode == 0) ?: "Tokens grabbed!" . LBR . HR;
+						if($mode == 0) echo "Tokens grabbed!" . LBR . HR;
 						fclose($fh);
 					}
 				} else {
-					echo ($mode == 0) ?: $this->error("Your token file is empty, grabbing new ones...") . LBR;
+					if($mode == 0) echo $this->error("Your token file is empty, grabbing new ones...") . LBR;
 					(!is_writable($config_file)) ?: chmod($config_file, 755);
 					unlink($config_file);
 					$this->oauth(0);
 					
 				}
 			} else {
-				echo ($mode == 0) ?: "Grabbing the oAuth Tokens from deviantART..." . LBR; // Turn off if silent
+				if($mode == 0) echo "Grabbing the oAuth Tokens from deviantART..." . LBR; // Turn off if silent
 				
 				// Opening browser based on OS
 				switch($this->os) {
@@ -147,7 +147,7 @@
 				$this->oauth_tokens = json_decode($tokens);
 				if($this->oauth_tokens->status != "success") {
 					
-					echo ($mode == 0) ?: $this->error("For some reason, your tokens failed") . LBR . HR;
+					if($mode == 0) echo $this->error("For some reason, your tokens failed") . LBR . HR;
 				} else {
 					// Writing to oauth.json
 					$config_file = "oauth.json";
@@ -155,7 +155,7 @@
 					$fh = fopen($config_file, 'w') or die("can't open file");
 					fwrite($fh, $tokens);
 					fclose($fh);
-					echo ($mode == 0) ?: "Tokens grabbed!" . LBR . HR;
+					if($mode == 0) echo "Tokens grabbed!" . LBR . HR;
 				}			
 			}
 		}
