@@ -33,7 +33,7 @@
 			// Checking the option
 			switch($choice) {
 				case 1: // oAuth
-					$this->oauth(1, true);
+					$this->oauth(1);
 					break;
 				case 2: // dAmntoken
 					$this->damntoken();
