@@ -33,7 +33,7 @@
 			// Checking the option
 			switch($choice) {
 				case 1: // oAuth
-					$this->oauth(1);
+					$this->oauth(1, true);
 					break;
 				case 2: // dAmntoken
 					$this->damntoken();
@@ -85,7 +85,7 @@
 		}
 		
 		// oAuth function, mode sets silent, 0 = silent, 1 = echo
-		public function oauth($mode) { 
+		public function oauth($mode, $refresh = false) { 
 			if(is_readable("oauth.json")){ // Checking if the file_exists
 				if($mode == 0) echo "Grabbing existing oAuth tokens..." . LBR; // Turn off if silent
 				
@@ -93,21 +93,41 @@
 				$config_file = "oauth.json";
 				if(filesize($config_file) != 0) {
 					$fh = fopen($config_file, 'r') or die("can't open file");
-				
+					
 					if($mode == 0) echo "Tokens grabbed from file..." . LBR . LBR;
 				// Setting to the oauth_tokens variable
 					$this->oauth_tokens = json_decode(fread($fh, filesize($config_file)));
 					
-					if($mode == 0) echo "Checking if tokens have expired..." . LBR;
-					$placebo = json_decode($this->socket('/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
-					if($placebo->status != "success") { 
-						if($mode == 0) echo "Tokens expired, grabbing new ones..." . LBR;
-						(!is_writable($config_file)) ?: chmod($config_file, 755);
-						unlink($config_file);
-						$this->oauth(0);
+					if($refresh) {
+						// Getting the access token.
+						if($mode == 0) echo "Refreshing Token";
+						$tokens = $this->socket('/oauth2/draft15/token?client_id='.$this->client_id.'&redirect_uri=http://damnapp.com//apicode.php&grant_type=refresh_token&client_secret='.$this->client_secret.'&refresh_token='.$this->oauth_tokens->refresh_token);
+						// Set to oauth_tokens variable
+						$this->oauth_tokens = json_decode($tokens);
+						if($this->oauth_tokens->status != "success") {
+							
+							if($mode == 0) echo $this->error("For some reason, your refresh tokens failed") . LBR . HR;
+						} else {
+							// Writing to oauth.json
+							$config_file = "oauth.json";
+						
+							$fh = fopen($config_file, 'w') or die("can't open file");
+							fwrite($fh, $tokens);
+							fclose($fh);
+							if($mode == 0) echo "Tokens grabbed with refreshtoken!" . LBR . HR;
+						}	
 					} else {
-						if($mode == 0) echo "Tokens grabbed!" . LBR . HR;
-						fclose($fh);
+						if($mode == 0) echo "Checking if tokens have expired..." . LBR;
+						$placebo = json_decode($this->socket('/api/draft15/placebo?access_token='.$this->oauth_tokens->access_token));
+						if($placebo->status != "success") { 
+							if($mode == 0) echo "Tokens expired, grabbing new ones..." . LBR;
+							(!is_writable($config_file)) ?: chmod($config_file, 755);
+							unlink($config_file);
+							$this->oauth(0, true);
+						} else {
+							if($mode == 0) echo "Tokens grabbed!" . LBR . HR;
+							fclose($fh);
+						}
 					}
 				} else {
 					if($mode == 0) echo $this->error("Your token file is empty, grabbing new ones...") . LBR;
